@@ -34,9 +34,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        //        insertDefaultCategory()
-        //        insertDefaultTask()
-
         val rvCategory = findViewById<RecyclerView>(R.id.rv_categories)
         val rvTask = findViewById<RecyclerView>(R.id.rv_tasks)
 
@@ -45,7 +42,9 @@ class MainActivity : AppCompatActivity() {
 
         categoryAdapter.setOnClickListener { selected ->
             if (selected.name == "+") {
-                Snackbar.make(rvCategory, "Nova categoria", Snackbar.LENGTH_SHORT).show()
+                val createCategoryBottomSheet = CreateCategoryBottomSheet()
+                createCategoryBottomSheet.show(supportFragmentManager, "create_category")
+
             } else {
                 val categoryTemp = categories.map { item ->
                     when {
@@ -71,27 +70,12 @@ class MainActivity : AppCompatActivity() {
             getCategoriesFromDataBase(categoryAdapter)
 
             rvTask.adapter = taskAdapter
-            //        taskAdapter.submitList(tasks)
             getTasksFromDataBase(taskAdapter)
         }
 
-    private fun insertDefaultCategory() {
-        val categoriesEntity = categories.map { CategoryEntity(name = it.name, isSelected = it.isSelected) }
-        GlobalScope.launch(Dispatchers.IO) {
-            categoryDao.insertAll(categoriesEntity)
-        }
-    }
-
-//    private fun insertDefaultTask() {
-//        val tasksEntities = tasks.map { TaskEntity(category = it.category, name = it.name) }
-//        GlobalScope.launch(Dispatchers.IO) {
-//            taskDao.insertAll(tasksEntities)
-//        }
-//    }
-
     private fun getCategoriesFromDataBase(adapter: CategoryListAdapter) {
         GlobalScope.launch(Dispatchers.IO) {
-            val categoriesFromDb : List<CategoryEntity> = categoryDao.getAll()
+            val categoriesFromDb: List<CategoryEntity> = categoryDao.getAll()
             val categoriesUiData = categoriesFromDb.map {
                 CategoryUiData(
                     name = it.name,
@@ -100,15 +84,16 @@ class MainActivity : AppCompatActivity() {
             }.toMutableList()
 
             //add fake + category
-
             categoriesUiData.add(
                 CategoryUiData(
                     name = "+",
                     isSelected = false
                 )
             )
-            categories = categoriesUiData
-            adapter.submitList(categoriesUiData)
+            GlobalScope.launch(Dispatchers.Main) {
+                categories = categoriesUiData
+                adapter.submitList(categoriesUiData)
+            }
         }
     }
 
@@ -121,82 +106,10 @@ class MainActivity : AppCompatActivity() {
                     category = it.category
                 )
             }
+            GlobalScope.launch(Dispatchers.Main) {
             tasks = tasksUiData
             adapter.submitList(tasksUiData)
         }
+        }
     }
 }
-
-//val categories = listOf(
-//    CategoryUiData(
-//        name = "ALL",
-//        isSelected = false
-//    ),
-//    CategoryUiData(
-//        name = "STUDY",
-//        isSelected = false
-//    ),
-//    CategoryUiData(
-//        name = "WORK",
-//        isSelected = false
-//    ),
-//    CategoryUiData(
-//        name = "WELLNESS",
-//        isSelected = false
-//    ),
-//    CategoryUiData(
-//        name = "HOME",
-//        isSelected = false
-//    ),
-//    CategoryUiData(
-//        name = "HEALTH",
-//        isSelected = false
-//    ),
-//)
-//
-//val tasks = listOf(
-//    TaskUiData(
-//        "Ler 10 páginas do livro atual",
-//        "STUDY"
-//    ),
-//    TaskUiData(
-//        "45 min de treino na academia",
-//        "HEALTH"
-//    ),
-//    TaskUiData(
-//        "Correr 5km",
-//        "HEALTH"
-//    ),
-//    TaskUiData(
-//        "Meditar por 10 min",
-//        "WELLNESS"
-//    ),
-//    TaskUiData(
-//        "Silêncio total por 5 min",
-//        "WELLNESS"
-//    ),
-//    TaskUiData(
-//        "Descer o livo",
-//        "HOME"
-//    ),
-//    TaskUiData(
-//        "Tirar caixas da garagem",
-//        "HOME"
-//    ),
-//    TaskUiData(
-//        "Lavar o carro",
-//        "HOME"
-//    ),
-//    TaskUiData(
-//        "Gravar aulas DevSpace",
-//        "WORK"
-//    ),
-//    TaskUiData(
-//        "Criar planejamento de vídeos da semana",
-//        "WORK"
-//    ),
-//    TaskUiData(
-//        "Soltar reels da semana",
-//        "WORK"
-//    ),
-//)
