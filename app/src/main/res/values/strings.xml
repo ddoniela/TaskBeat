@@ -5,5 +5,8 @@
     <string name="create">Create</string>
     <string name="update_task_title">Update task</string>
     <string name="update">Update</string>
+    <string name="delete">Delete</string>
     <string name="task_name">Task name</string>
+    <string name="category_delete_title">Important</string>
+    <string name="category_delete_description">By deleting this category you will delete all of its tasks. Are you sure?</string>
 </resources>
