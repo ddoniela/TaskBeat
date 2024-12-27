@@ -113,18 +113,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getTasksFromDataBase() {
-            val tasksFromDb: List<TaskEntity> = taskDao.getAll()
-            val tasksUiData: List<TaskUiData> = tasksFromDb.map {
-                TaskUiData(
-                    id = it.id,
-                    name = it.name,
-                    category = it.category
-                )
-            }
-            GlobalScope.launch(Dispatchers.Main) {
-                tasks = tasksUiData
-                taskAdapter.submitList(tasksUiData)
-            }
+        val tasksFromDb: List<TaskEntity> = taskDao.getAll()
+        val tasksUiData: List<TaskUiData> = tasksFromDb.map {
+            TaskUiData(
+                id = it.id,
+                name = it.name,
+                category = it.category
+            )
+        }
+        GlobalScope.launch(Dispatchers.Main) {
+            tasks = tasksUiData
+            taskAdapter.submitList(tasksUiData)
+        }
     }
 
     private fun insertCategory(categoryEntity: CategoryEntity) {
@@ -141,18 +141,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateTask(taskEntity: TaskEntity) {
+        GlobalScope.launch(Dispatchers.IO) {
+            taskDao.update(taskEntity)
+            getTasksFromDataBase()
+        }
+    }
+
     private fun showCreateUpdateTaskBottomSheet(taskUiData: TaskUiData? = null) {
         val createTaskBottomSheet = CreateOrUpdateTaskBottomSheet(
             task = taskUiData,
-            categoryList = categories
-        ) {
-                taskToBeCreated ->
-            val taskEntityToBeInserted = TaskEntity(
-                name = taskToBeCreated.name,
-                category = taskToBeCreated.category
-            )
-            insertTask(taskEntityToBeInserted)
-        }
+            categoryList = categories,
+            onCreateClicked = { taskToBeCreated ->
+                val taskEntityToBeInserted = TaskEntity(
+                    name = taskToBeCreated.name,
+                    category = taskToBeCreated.category
+                )
+                insertTask(taskEntityToBeInserted)
+            },
+            onUpdateClicked = { taskToBeUpdated ->
+                val taskEntityToBeUpdated = TaskEntity(
+                    id = taskToBeUpdated.id,
+                    name = taskToBeUpdated.name,
+                    category = taskToBeUpdated.category
+                )
+                updateTask(taskEntityToBeUpdated)
+            }
+        )
         createTaskBottomSheet.show(supportFragmentManager, "createTaskBottomSheet")
     }
 }
