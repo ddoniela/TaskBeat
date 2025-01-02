@@ -2,6 +2,9 @@ package com.devspace.taskbeats
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Button
+import android.widget.LinearLayout
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -12,11 +15,16 @@ import kotlinx.coroutines.launch
 class MainActivity : AppCompatActivity() {
 
     private var categories = listOf<CategoryUiData>()
+    private var categoriesEntity = listOf<CategoryEntity>()
     private var tasks = listOf<TaskUiData>()
     private val categoryAdapter = CategoryListAdapter()
     private val taskAdapter by lazy {
         TaskListAdapter()
     }
+    private lateinit var rvCategory: RecyclerView
+    private lateinit var ctnEmptyView: LinearLayout
+    private lateinit var fabCreateTask: FloatingActionButton
+
 
     private val db by lazy {
         Room.databaseBuilder(
@@ -37,9 +45,15 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val rvCategory = findViewById<RecyclerView>(R.id.rv_categories)
+        rvCategory = findViewById(R.id.rv_categories)
+        ctnEmptyView = findViewById(R.id.ll_empty_view)
         val rvTask = findViewById<RecyclerView>(R.id.rv_tasks)
-        val fabCreateTask = findViewById<FloatingActionButton>(R.id.fab_create_task)
+        fabCreateTask = findViewById(R.id.fab_create_task)
+        val btnCreateEmpty = findViewById<Button>(R.id.btn_create_empty)
+
+        btnCreateEmpty.setOnClickListener {
+            showCreateCategoryBottomSheet()
+        }
 
         fabCreateTask.setOnClickListener {
             showCreateUpdateTaskBottomSheet()
@@ -49,7 +63,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         categoryAdapter.setOnLongClickListener { categoryToBeDeleted ->
-            if (categoryToBeDeleted.name != "+") {
+            if (categoryToBeDeleted.name != "+" && categoryToBeDeleted.name != "ALL") {
                 val title = this.getString(R.string.category_delete_title)
                 val description = this.getString(R.string.category_delete_description)
                 val btnText = this.getString(R.string.delete)
@@ -70,14 +84,7 @@ class MainActivity : AppCompatActivity() {
 
         categoryAdapter.setOnClickListener { selected ->
             if (selected.name == "+") {
-                val createCategoryBottomSheet = CreateCategoryBottomSheet { categoryName ->
-                    val categoryEntity = CategoryEntity(
-                        name = categoryName,
-                        isSelected = false
-                    )
-                    insertCategory(categoryEntity)
-                }
-                createCategoryBottomSheet.show(supportFragmentManager, "create_category")
+                showCreateCategoryBottomSheet()
             } else {
                 val categoryTemp = categories.map { item ->
                     when {
@@ -129,6 +136,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun getCategoriesFromDataBase() {
         val categoriesFromDb: List<CategoryEntity> = categoryDao.getAll()
+        categoriesEntity = categoriesFromDb
+
+        GlobalScope.launch(Dispatchers.Main) {
+            if (categoriesEntity.isEmpty()) {
+                rvCategory.isVisible = false
+                ctnEmptyView.isVisible = true
+                fabCreateTask.isVisible = false
+            } else {
+                rvCategory.isVisible = true
+                ctnEmptyView.isVisible = false
+                fabCreateTask.isVisible = true
+            }
+        }
         val categoriesUiData = categoriesFromDb.map {
             CategoryUiData(
                 name = it.name,
@@ -219,7 +239,7 @@ class MainActivity : AppCompatActivity() {
     private fun showCreateUpdateTaskBottomSheet(taskUiData: TaskUiData? = null) {
         val createTaskBottomSheet = CreateOrUpdateTaskBottomSheet(
             task = taskUiData,
-            categoryList = categories,
+            categoryList = categoriesEntity,
             onCreateClicked = { taskToBeCreated ->
                 val taskEntityToBeInserted = TaskEntity(
                     name = taskToBeCreated.name,
@@ -255,5 +275,16 @@ class MainActivity : AppCompatActivity() {
             getCategoriesFromDataBase()
             getTasksFromDataBase()
         }
+    }
+
+    private fun showCreateCategoryBottomSheet() {
+        val createCategoryBottomSheet = CreateCategoryBottomSheet { categoryName ->
+            val categoryEntity = CategoryEntity(
+                name = categoryName,
+                isSelected = false
+            )
+            insertCategory(categoryEntity)
+        }
+        createCategoryBottomSheet.show(supportFragmentManager, "create_category")
     }
 }

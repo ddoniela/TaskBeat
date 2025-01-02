@@ -9,4 +9,6 @@
     <string name="task_name">Task name</string>
     <string name="category_delete_title">Important</string>
     <string name="category_delete_description">By deleting this category you will delete all of its tasks. Are you sure?</string>
+    <string name="empty_category_title">No category found!</string>
+    <string name="empty_category_description">Please add a new one.</string>
 </resources>
